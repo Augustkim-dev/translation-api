@@ -3,10 +3,15 @@ const API_BASE_URL = 'https://translate-api-five.vercel.app';
 const API_TRANSLATE_URL = `${API_BASE_URL}/api/translate`;
 const API_HEALTH_URL = `${API_BASE_URL}/health`;
 
+// TTS 설정
+let currentUtterance = null;
+let isSpeaking = false;
+
 // 페이지 로드 시 실행
 window.addEventListener('DOMContentLoaded', () => {
     checkAPIStatus();
     setupCharacterCounter();
+    checkTTSSupport();
 });
 
 // API 상태 확인
@@ -147,15 +152,32 @@ function displayResult(result) {
     const sourceLang = languageNames[result.sourceLanguage] || result.sourceLanguage;
     const targetLang = languageNames[result.targetLanguage] || result.targetLanguage;
 
+    const ttsControls = checkTTSSupport() ? `
+        <div class="tts-controls">
+            <button onclick="speakText('${escapeHtml(result.translatedText).replace(/'/g, "\\'")}'', '${result.targetLanguage}')" class="speak-btn">
+                🔊 읽기
+            </button>
+            <div class="speech-rate-control">
+                <label for="speechRate">속도:</label>
+                <input type="range" id="speechRate" min="0.5" max="2" step="0.1" value="1" 
+                       onchange="changeSpeechRate(this.value)" oninput="changeSpeechRate(this.value)">
+                <span id="rateDisplay">1x</span>
+            </div>
+        </div>
+    ` : '';
+
     resultDiv.innerHTML = `
         <div class="result-container">
             <div class="result-header">
                 <h3>번역 결과</h3>
-                <button onclick="copyToClipboard('${escapeHtml(result.translatedText)}')" class="copy-btn">
-                    📋 복사
-                </button>
+                <div class="result-actions">
+                    <button onclick="copyToClipboard('${escapeHtml(result.translatedText).replace(/'/g, "\\'")}'')" class="copy-btn">
+                        📋 복사
+                    </button>
+                    ${ttsControls}
+                </div>
             </div>
-            <div class="translated-text">
+            <div class="translated-text" id="translatedTextContent">
                 ${escapeHtml(result.translatedText)}
             </div>
             <div class="result-info">
@@ -288,6 +310,138 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+// TTS 지원 확인
+function checkTTSSupport() {
+    if (!('speechSynthesis' in window)) {
+        console.warn('이 브라우저는 음성 합성을 지원하지 않습니다.');
+        return false;
+    }
+    return true;
+}
+
+// 언어 코드를 음성 언어 코드로 매핑
+function getVoiceLang(langCode) {
+    const voiceLangMap = {
+        'ko': 'ko-KR',
+        'en': 'en-US',
+        'ja': 'ja-JP',
+        'zh-Hans': 'zh-CN',
+        'zh-Hant': 'zh-TW',
+        'es': 'es-ES',
+        'fr': 'fr-FR',
+        'de': 'de-DE',
+        'it': 'it-IT',
+        'pt': 'pt-PT',
+        'ru': 'ru-RU',
+        'th': 'th-TH',
+        'vi': 'vi-VN',
+        'id': 'id-ID',
+        'ms': 'ms-MY',
+        'tl': 'fil-PH',
+        'hi': 'hi-IN',
+        'bn': 'bn-BD',
+        'ta': 'ta-IN',
+        'ur': 'ur-PK',
+        'mn': 'mn-MN',
+        'kk': 'kk-KZ',
+        'uz': 'uz-UZ',
+        'ar': 'ar-SA'
+    };
+    return voiceLangMap[langCode] || langCode;
+}
+
+// 텍스트 음성 읽기
+function speakText(text, langCode) {
+    if (!checkTTSSupport()) {
+        showMobileAlert('음성 읽기를 지원하지 않는 브라우저입니다.');
+        return;
+    }
+
+    // 이미 읽고 있으면 중지
+    if (isSpeaking) {
+        stopSpeaking();
+        return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    const voiceLang = getVoiceLang(langCode);
+    
+    // 언어 설정
+    utterance.lang = voiceLang;
+    
+    // 속도 및 음량 설정
+    utterance.rate = parseFloat(document.getElementById('speechRate')?.value || 1);
+    utterance.volume = 1;
+    utterance.pitch = 1;
+
+    // 사용 가능한 음성 중 해당 언어 음성 선택
+    const voices = speechSynthesis.getVoices();
+    const langVoice = voices.find(voice => voice.lang.startsWith(voiceLang.split('-')[0]));
+    if (langVoice) {
+        utterance.voice = langVoice;
+    }
+
+    // 이벤트 핸들러
+    utterance.onstart = () => {
+        isSpeaking = true;
+        updateSpeakButton(true);
+    };
+
+    utterance.onend = () => {
+        isSpeaking = false;
+        updateSpeakButton(false);
+    };
+
+    utterance.onerror = (event) => {
+        console.error('TTS 에러:', event);
+        isSpeaking = false;
+        updateSpeakButton(false);
+        showMobileAlert('음성 읽기 중 오류가 발생했습니다.');
+    };
+
+    currentUtterance = utterance;
+    speechSynthesis.speak(utterance);
+}
+
+// 음성 읽기 중지
+function stopSpeaking() {
+    if (speechSynthesis.speaking) {
+        speechSynthesis.cancel();
+    }
+    isSpeaking = false;
+    updateSpeakButton(false);
+}
+
+// 음성 읽기 버튼 상태 업데이트
+function updateSpeakButton(speaking) {
+    const speakBtn = document.querySelector('.speak-btn');
+    if (speakBtn) {
+        if (speaking) {
+            speakBtn.innerHTML = '⏸️ 정지';
+            speakBtn.classList.add('speaking');
+        } else {
+            speakBtn.innerHTML = '🔊 읽기';
+            speakBtn.classList.remove('speaking');
+        }
+    }
+}
+
+// 음성 속도 변경
+function changeSpeechRate(rate) {
+    const rateDisplay = document.getElementById('rateDisplay');
+    if (rateDisplay) {
+        rateDisplay.textContent = `${rate}x`;
+    }
+    
+    // 현재 읽고 있는 중이면 재시작
+    if (isSpeaking && currentUtterance) {
+        const text = currentUtterance.text;
+        const lang = currentUtterance.lang;
+        stopSpeaking();
+        setTimeout(() => speakText(text, lang.split('-')[0]), 100);
+    }
 }
 
 // Enter 키로 번역 실행

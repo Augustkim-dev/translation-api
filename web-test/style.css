@@ -252,8 +252,10 @@ select option {
 .result-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
 }
 
 .result-header h3 {
@@ -261,19 +263,93 @@ select option {
     font-size: 1.2em;
 }
 
-.copy-btn {
+.result-actions {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.copy-btn, .speak-btn {
     padding: 8px 16px;
-    background: #667eea;
+    background: var(--primary-color);
     color: white;
     border: none;
     border-radius: 8px;
     cursor: pointer;
     font-size: 14px;
     transition: all 0.3s;
+    min-height: 36px;
 }
 
-.copy-btn:hover {
-    background: #764ba2;
+.copy-btn:hover, .speak-btn:hover {
+    background: var(--secondary-color);
+}
+
+.speak-btn.speaking {
+    background: #ef4444;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.8; }
+}
+
+/* TTS \ucee8\ud2b8\ub864 */
+.tts-controls {
+    display: flex;
+    gap: var(--spacing-sm);
+    align-items: center;
+}
+
+.speech-rate-control {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    background: var(--bg-light);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+}
+
+.speech-rate-control label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.speech-rate-control input[type="range"] {
+    width: 80px;
+    height: 4px;
+    background: #ddd;
+    border-radius: 2px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.speech-rate-control input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.speech-rate-control input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: var(--primary-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+#rateDisplay {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    min-width: 30px;
 }
 
 .translated-text {
@@ -433,6 +509,31 @@ footer {
     .api-info {
         font-size: 0.8rem;
     }
+    
+    .result-header {
+        flex-direction: column;
+        gap: var(--spacing-xs);
+    }
+    
+    .result-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .tts-controls {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .speech-rate-control {
+        width: 100%;
+        justify-content: space-between;
+    }
+    
+    .speech-rate-control input[type="range"] {
+        flex: 1;
+        margin: 0 var(--spacing-sm);
+    }
 }
 
 /* 태블릿 세로 (481px - 768px) */
@@ -478,6 +579,14 @@ footer {
     
     .clear-btn {
         flex: 1;
+    }
+    
+    .tts-controls {
+        flex-direction: row;
+    }
+    
+    .speech-rate-control {
+        flex-direction: row;
     }
 }
 
