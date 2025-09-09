@@ -1,7 +1,7 @@
 // Vercel Serverless Function Entry Point
 const express = require('express');
 const cors = require('cors');
-const translationService = require('../translationService');
+const translationService = require('../server/translationService');
 
 const app = express();
 
