@@ -2,6 +2,13 @@
 
 Azure Translator를 활용한 실시간 번역 API 서버 및 테스트 웹페이지입니다.
 
+## 🚀 배포 정보
+
+- **Production URL**: https://translate-api-five.vercel.app
+- **Health Check**: https://translate-api-five.vercel.app/health
+- **API Endpoint**: https://translate-api-five.vercel.app/api/translate
+- **자동 배포**: GitHub main 브랜치 푸시 시 자동 배포
+
 ## 📋 프로젝트 구조
 
 ```
