@@ -1,0 +1,40 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.translation-form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+textarea, select, button {
+    padding: 10px;
+    font-size: 16px;
+}
+
+select {
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+select optgroup {
+    font-weight: bold;
+    color: #333;
+}
+
+select option {
+    padding: 5px;
+}
+
+.result {
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    min-height: 100px;
+    background-color: #f9f9f9;
+} 

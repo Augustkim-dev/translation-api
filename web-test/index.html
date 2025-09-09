@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>번역기 테스트</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>번역기 테스트</h1>
+        <div class="translation-form">
+            <textarea id="inputText" placeholder="번역할 텍스트를 입력하세요"></textarea>
+            <select id="targetLanguage">
+                <optgroup label="주요 언어">
+                    <option value="en">영어</option>
+                    <option value="ja">일본어</option>
+                    <option value="zh-Hans">중국어 (간체)</option>
+                    <option value="zh-Hant">중국어 (번체)</option>
+                </optgroup>
+                <optgroup label="동남아시아">
+                    <option value="th">태국어</option>
+                    <option value="vi">베트남어</option>
+                    <option value="id">인도네시아어</option>
+                    <option value="ms">말레이어</option>
+                    <option value="tl">필리핀어</option>
+                </optgroup>
+                <optgroup label="남아시아">
+                    <option value="hi">힌디어</option>
+                    <option value="bn">벵골어</option>
+                    <option value="ta">타밀어</option>
+                    <option value="ur">우르두어</option>
+                </optgroup>
+                <optgroup label="기타 아시아">
+                    <option value="mn">몽골어</option>
+                    <option value="kk">카자흐어</option>
+                    <option value="uz">우즈베크어</option>
+                </optgroup>
+            </select>
+            <button onclick="translateText()">번역하기</button>
+        </div>
+        <div id="result" class="result"></div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 
