@@ -189,15 +189,55 @@ function showError(message) {
 function swapLanguages() {
     const sourceSelect = document.getElementById('sourceLanguage');
     const targetSelect = document.getElementById('targetLanguage');
+    const inputText = document.getElementById('inputText');
+    const resultDiv = document.getElementById('result');
     
     if (sourceSelect.value === 'auto') {
-        alert('자동 감지는 바꿀 수 없습니다.');
+        // 모바일 친화적 알림
+        showMobileAlert('자동 감지는 바꿀 수 없습니다.');
         return;
     }
     
+    // 언어 교체
     const temp = sourceSelect.value;
     sourceSelect.value = targetSelect.value;
     targetSelect.value = temp;
+    
+    // 입력 텍스트와 결과가 있으면 자동으로 재번역
+    if (inputText.value.trim() && resultDiv.querySelector('.translated-text')) {
+        translateText();
+    }
+}
+
+// 모바일 친화적 알림 함수
+function showMobileAlert(message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = 'mobile-alert';
+    alertDiv.textContent = message;
+    alertDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 10px;
+        z-index: 9999;
+        font-size: 1rem;
+        min-width: 200px;
+        text-align: center;
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        alertDiv.style.opacity = '0';
+        alertDiv.style.transition = 'opacity 0.3s';
+        setTimeout(() => {
+            document.body.removeChild(alertDiv);
+        }, 300);
+    }, 2000);
 }
 
 // 초기화 함수

@@ -5,40 +5,61 @@
     box-sizing: border-box;
 }
 
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --bg-light: #f9fafb;
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 1.5rem;
+    --spacing-lg: 2rem;
+    --spacing-xl: 3rem;
+}
+
+html {
+    font-size: 16px;
+}
+
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary-gradient);
     min-height: 100vh;
-    padding: 20px;
+    padding: var(--spacing-sm);
+    line-height: 1.6;
 }
 
 /* 메인 컨테이너 */
 .container {
     max-width: 900px;
+    width: 100%;
     margin: 0 auto;
     background: white;
-    border-radius: 20px;
+    border-radius: 1.25rem;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     overflow: hidden;
 }
 
 /* 헤더 */
 header {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--primary-gradient);
     color: white;
-    padding: 30px;
+    padding: var(--spacing-lg);
     text-align: center;
 }
 
 header h1 {
-    font-size: 2.5em;
-    margin-bottom: 10px;
+    font-size: clamp(1.75rem, 5vw, 2.5rem);
+    margin-bottom: var(--spacing-xs);
 }
 
 .subtitle {
-    font-size: 1.1em;
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
     opacity: 0.9;
-    margin-bottom: 20px;
+    margin-bottom: var(--spacing-md);
 }
 
 .api-status {
@@ -59,7 +80,7 @@ header h1 {
 
 /* 메인 섹션 */
 main {
-    padding: 30px;
+    padding: clamp(var(--spacing-md), 4vw, var(--spacing-lg));
 }
 
 /* 번역 폼 */
@@ -80,12 +101,13 @@ label {
 
 textarea {
     width: 100%;
-    padding: 15px;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 16px;
+    padding: var(--spacing-sm);
+    border: 2px solid var(--border-color);
+    border-radius: 0.625rem;
+    font-size: 1rem;
     resize: vertical;
     transition: border-color 0.3s;
+    min-height: 120px;
 }
 
 textarea:focus {
@@ -103,9 +125,10 @@ textarea:focus {
 /* 컨트롤 섹션 */
 .control-section {
     display: flex;
-    gap: 15px;
-    margin-bottom: 25px;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
     align-items: flex-end;
+    flex-wrap: wrap;
 }
 
 .language-select {
@@ -114,13 +137,14 @@ textarea:focus {
 
 select {
     width: 100%;
-    padding: 12px;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 16px;
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 0.625rem;
+    font-size: 1rem;
     background: white;
     cursor: pointer;
     transition: border-color 0.3s;
+    min-height: 44px;
 }
 
 select:focus {
@@ -137,14 +161,24 @@ select option {
     padding: 5px;
 }
 
+.swap-button {
+    display: flex;
+    align-items: center;
+}
+
 .swap-button button {
-    padding: 12px 20px;
-    background: #f3f4f6;
-    border: 2px solid #e5e7eb;
-    border-radius: 10px;
-    font-size: 20px;
+    padding: 0.75rem 1.25rem;
+    background: var(--bg-light);
+    border: 2px solid var(--border-color);
+    border-radius: 0.625rem;
+    font-size: 1.25rem;
     cursor: pointer;
     transition: all 0.3s;
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .swap-button button:hover {
@@ -160,13 +194,14 @@ select option {
 }
 
 .translate-btn, .clear-btn {
-    padding: 15px 40px;
+    padding: 1rem 2.5rem;
     border: none;
-    border-radius: 10px;
-    font-size: 16px;
+    border-radius: 0.625rem;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s;
+    min-height: 48px;
 }
 
 .translate-btn {
@@ -325,11 +360,265 @@ footer {
     }
 }
 
-/* 반응형 디자인 */
-@media (max-width: 768px) {
-    header h1 { font-size: 2em; }
-    .control-section { flex-direction: column; }
-    .swap-button { display: none; }
-    .button-section { flex-direction: column; }
-    .translate-btn, .clear-btn { width: 100%; }
+/* 반응형 디자인 - 모바일 우선 접근 */
+
+/* 초소형 모바일 (320px - 480px) */
+@media (max-width: 480px) {
+    :root {
+        font-size: 14px;
+    }
+    
+    body {
+        padding: 0;
+    }
+    
+    .container {
+        border-radius: 0;
+        box-shadow: none;
+    }
+    
+    header {
+        padding: var(--spacing-md);
+    }
+    
+    main {
+        padding: var(--spacing-md);
+    }
+    
+    .control-section {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .language-select {
+        width: 100%;
+    }
+    
+    .swap-button {
+        width: 100%;
+        order: 3;
+    }
+    
+    .swap-button button {
+        width: 100%;
+    }
+    
+    .button-section {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .translate-btn, .clear-btn {
+        width: 100%;
+        padding: 1rem;
+    }
+    
+    textarea {
+        min-height: 100px;
+        font-size: 16px; /* iOS 줌 방지 */
+    }
+    
+    select {
+        font-size: 16px; /* iOS 줌 방지 */
+    }
+    
+    .result {
+        min-height: 120px;
+    }
+    
+    footer {
+        padding: var(--spacing-md);
+    }
+    
+    .api-info {
+        font-size: 0.8rem;
+    }
+}
+
+/* 태블릿 세로 (481px - 768px) */
+@media (min-width: 481px) and (max-width: 768px) {
+    :root {
+        font-size: 15px;
+    }
+    
+    body {
+        padding: var(--spacing-sm);
+    }
+    
+    .container {
+        border-radius: 1rem;
+    }
+    
+    .control-section {
+        flex-wrap: wrap;
+    }
+    
+    .language-select {
+        flex: 1 1 calc(50% - var(--spacing-xs));
+        min-width: 200px;
+    }
+    
+    .swap-button {
+        flex: 0 0 100%;
+        order: 3;
+        margin-top: var(--spacing-xs);
+    }
+    
+    .swap-button button {
+        width: 100%;
+    }
+    
+    .button-section {
+        gap: var(--spacing-sm);
+    }
+    
+    .translate-btn {
+        flex: 2;
+    }
+    
+    .clear-btn {
+        flex: 1;
+    }
+}
+
+/* 태블릿 가로 및 소형 데스크톱 (769px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .container {
+        max-width: 90%;
+    }
+    
+    .control-section {
+        flex-wrap: nowrap;
+    }
+    
+    .language-select {
+        flex: 1;
+    }
+    
+    .swap-button {
+        flex: 0 0 auto;
+    }
+}
+
+/* 대형 화면 (1025px+) */
+@media (min-width: 1025px) {
+    :root {
+        font-size: 16px;
+    }
+    
+    .container {
+        max-width: 900px;
+    }
+}
+
+/* 가로 모드 최적화 */
+@media (orientation: landscape) and (max-height: 500px) {
+    header {
+        padding: var(--spacing-sm);
+    }
+    
+    header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .subtitle {
+        display: none;
+    }
+    
+    main {
+        padding: var(--spacing-sm);
+    }
+    
+    textarea {
+        min-height: 80px;
+        max-height: 120px;
+    }
+    
+    .result {
+        min-height: 80px;
+    }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+    button, select, textarea {
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    button:active {
+        transform: scale(0.98);
+    }
+    
+    .translate-btn:hover:not(:disabled) {
+        transform: none;
+        box-shadow: none;
+    }
+}
+
+/* 다크 모드 지원 (선택사항) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text-primary: #f3f4f6;
+        --text-secondary: #9ca3af;
+        --border-color: #374151;
+        --bg-light: #1f2937;
+    }
+    
+    body {
+        background: linear-gradient(135deg, #4c1d95 0%, #5b21b6 100%);
+    }
+    
+    .container {
+        background: #111827;
+        color: var(--text-primary);
+    }
+    
+    textarea, select {
+        background: #1f2937;
+        color: var(--text-primary);
+        border-color: var(--border-color);
+    }
+    
+    .result {
+        background: var(--bg-light);
+        border-color: var(--border-color);
+    }
+    
+    .translated-text {
+        background: #111827;
+        color: var(--text-primary);
+    }
+    
+    footer {
+        background: #1f2937;
+        border-top-color: var(--border-color);
+    }
+    
+    .api-info code {
+        background: #374151;
+        color: #f3f4f6;
+    }
+}
+
+/* 프린트 스타일 */
+@media print {
+    body {
+        background: white;
+        padding: 0;
+    }
+    
+    .container {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    header {
+        background: none;
+        color: black;
+        border-bottom: 2px solid #333;
+    }
+    
+    .api-status, .button-section, .swap-button {
+        display: none;
+    }
 } 
