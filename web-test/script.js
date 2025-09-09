@@ -12,6 +12,16 @@ window.addEventListener('DOMContentLoaded', () => {
     checkAPIStatus();
     setupCharacterCounter();
     checkTTSSupport();
+    // 음성 목록 로드
+    if ('speechSynthesis' in window) {
+        speechSynthesis.getVoices();
+        // Chrome에서 음성 목록 비동기 로드 처리
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => {
+                console.log('음성 목록 로드 완료:', speechSynthesis.getVoices().length);
+            };
+        }
+    }
 });
 
 // API 상태 확인
@@ -152,9 +162,13 @@ function displayResult(result) {
     const sourceLang = languageNames[result.sourceLanguage] || result.sourceLanguage;
     const targetLang = languageNames[result.targetLanguage] || result.targetLanguage;
 
+    // 전역 변수에 번역 결과 저장
+    window.lastTranslatedText = result.translatedText;
+    window.lastTargetLanguage = result.targetLanguage;
+    
     const ttsControls = checkTTSSupport() ? `
         <div class="tts-controls">
-            <button onclick="speakText('${escapeHtml(result.translatedText).replace(/'/g, "\\'")}'', '${result.targetLanguage}')" class="speak-btn">
+            <button onclick="speakText(window.lastTranslatedText, window.lastTargetLanguage)" class="speak-btn" id="speakBtn">
                 🔊 읽기
             </button>
             <div class="speech-rate-control">
@@ -171,7 +185,7 @@ function displayResult(result) {
             <div class="result-header">
                 <h3>번역 결과</h3>
                 <div class="result-actions">
-                    <button onclick="copyToClipboard('${escapeHtml(result.translatedText).replace(/'/g, "\\'")}'')" class="copy-btn">
+                    <button onclick="copyToClipboard(window.lastTranslatedText)" class="copy-btn">
                         📋 복사
                     </button>
                     ${ttsControls}
@@ -276,9 +290,12 @@ function clearAll() {
 
 // 클립보드 복사 함수
 function copyToClipboard(text) {
+    // text가 undefined인 경우 window.lastTranslatedText 사용
+    const textToCopy = text || window.lastTranslatedText || '';
+    
     // 임시 textarea 생성
     const textarea = document.createElement('textarea');
-    textarea.value = text;
+    textarea.value = textToCopy;
     textarea.style.position = 'fixed';
     textarea.style.opacity = '0';
     document.body.appendChild(textarea);
@@ -354,6 +371,8 @@ function getVoiceLang(langCode) {
 
 // 텍스트 음성 읽기
 function speakText(text, langCode) {
+    console.log('speakText 호출:', text, langCode);
+    
     if (!checkTTSSupport()) {
         showMobileAlert('음성 읽기를 지원하지 않는 브라우저입니다.');
         return;
@@ -361,48 +380,62 @@ function speakText(text, langCode) {
 
     // 이미 읽고 있으면 중지
     if (isSpeaking) {
+        console.log('음성 중지');
         stopSpeaking();
         return;
     }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    const voiceLang = getVoiceLang(langCode);
-    
-    // 언어 설정
-    utterance.lang = voiceLang;
-    
-    // 속도 및 음량 설정
-    utterance.rate = parseFloat(document.getElementById('speechRate')?.value || 1);
-    utterance.volume = 1;
-    utterance.pitch = 1;
+    try {
+        const utterance = new SpeechSynthesisUtterance(text);
+        const voiceLang = getVoiceLang(langCode);
+        
+        console.log('음성 언어:', voiceLang);
+        
+        // 언어 설정
+        utterance.lang = voiceLang;
+        
+        // 속도 및 음량 설정
+        utterance.rate = parseFloat(document.getElementById('speechRate')?.value || 1);
+        utterance.volume = 1;
+        utterance.pitch = 1;
 
-    // 사용 가능한 음성 중 해당 언어 음성 선택
-    const voices = speechSynthesis.getVoices();
-    const langVoice = voices.find(voice => voice.lang.startsWith(voiceLang.split('-')[0]));
-    if (langVoice) {
-        utterance.voice = langVoice;
+        // 사용 가능한 음성 중 해당 언어 음성 선택
+        const voices = speechSynthesis.getVoices();
+        console.log('사용 가능한 음성 수:', voices.length);
+        
+        const langVoice = voices.find(voice => voice.lang.startsWith(voiceLang.split('-')[0]));
+        if (langVoice) {
+            utterance.voice = langVoice;
+            console.log('선택된 음성:', langVoice.name);
+        }
+
+        // 이벤트 핸들러
+        utterance.onstart = () => {
+            console.log('음성 시작');
+            isSpeaking = true;
+            updateSpeakButton(true);
+        };
+
+        utterance.onend = () => {
+            console.log('음성 종료');
+            isSpeaking = false;
+            updateSpeakButton(false);
+        };
+
+        utterance.onerror = (event) => {
+            console.error('TTS 에러:', event);
+            isSpeaking = false;
+            updateSpeakButton(false);
+            showMobileAlert('음성 읽기 중 오류가 발생했습니다.');
+        };
+
+        currentUtterance = utterance;
+        speechSynthesis.cancel(); // 기존 큐 초기화
+        speechSynthesis.speak(utterance);
+    } catch (error) {
+        console.error('음성 재생 오류:', error);
+        showMobileAlert('음성 재생 중 오류가 발생했습니다.');
     }
-
-    // 이벤트 핸들러
-    utterance.onstart = () => {
-        isSpeaking = true;
-        updateSpeakButton(true);
-    };
-
-    utterance.onend = () => {
-        isSpeaking = false;
-        updateSpeakButton(false);
-    };
-
-    utterance.onerror = (event) => {
-        console.error('TTS 에러:', event);
-        isSpeaking = false;
-        updateSpeakButton(false);
-        showMobileAlert('음성 읽기 중 오류가 발생했습니다.');
-    };
-
-    currentUtterance = utterance;
-    speechSynthesis.speak(utterance);
 }
 
 // 음성 읽기 중지
@@ -417,6 +450,7 @@ function stopSpeaking() {
 // 음성 읽기 버튼 상태 업데이트
 function updateSpeakButton(speaking) {
     const speakBtn = document.querySelector('.speak-btn');
+    console.log('버튼 상태 업데이트:', speaking, speakBtn);
     if (speakBtn) {
         if (speaking) {
             speakBtn.innerHTML = '⏸️ 정지';
