@@ -346,5 +346,75 @@ translation-mvp/
 
 ---
 
-*Last Updated: 2025-01-09*
+## 🛡️ 2025-01-10 Azure 무료 사용량 초과 방지 안전장치 구현
+
+### 개요
+Azure Translator API 무료 티어(F0) 사용 시 월 200만자 한도를 초과하지 않도록 완전한 차단 시스템을 구현했습니다.
+
+### 구현된 안전장치
+
+#### 1. **UsageTracker 클래스 개선** (`services/usageTracker.js`)
+- **`getRecommendedService()` 개선**
+  - 모든 서비스 한도 초과 시 에러 발생
+  - Azure/Google 사용량 상태별 자동 서비스 선택
+  - 100% 사용 시 완전 차단
+
+- **`isServiceAvailable()` 강화**
+  - 한도 초과 시 상세 로그 출력
+  - 95% 도달 시 강력한 경고 (🚨)
+  - 90% 도달 시 주의 경고 (⚠️)
+
+#### 2. **TranslationService 개선** (`translationService.js`)
+- **사전 검증 시스템 추가**
+  - 번역 요청 전 `isServiceAvailable()` 체크
+  - 한도 초과 시 명확한 에러 메시지
+  - 자동 폴백 서비스 전환 로직
+
+#### 3. **AzureTranslator 에러 처리 개선** (`services/azureTranslator.js`)
+- **텍스트 길이 제한**: 50,000자 초과 방지
+- **429 에러 메시지 개선**: "무료 한도(월 200만자) 초과" 명시
+- **403 에러 처리**: Azure Portal 확인 안내
+
+### 보호 수준
+```
+90% 사용 → ⚠️ 경고 + Google 전환 시도
+95% 사용 → 🚨 강력한 경고 + 잔여량 표시
+100% 사용 → ❌ 완전 차단 + 서비스 중단
+```
+
+### 주요 코드 변경사항
+
+#### 변경된 파일
+- `services/usageTracker.js`: 한도 관리 로직 강화
+- `translationService.js`: 사전 검증 추가
+- `services/azureTranslator.js`: 에러 메시지 개선
+
+### 테스트 결과
+- ✅ 서버 정상 작동 확인
+- ✅ 헬스체크 API 정상
+- ✅ 번역 API 정상 작동
+- ✅ 사용량 추적 기능 작동
+- ✅ 한도 초과 시뮬레이션 성공
+
+### 기대 효과
+- **완전한 과금 방지**: Azure F0 티어 한도 초과 불가능
+- **명확한 상태 안내**: 사용자에게 정확한 한도 정보 제공
+- **자동 서비스 전환**: Google API 설정 시 자동 폴백
+- **사전 차단**: 한도 도달 전 미리 경고 및 차단
+
+### 환경 설정값
+```
+AZURE_MONTHLY_LIMIT=2000000  # 월 200만자
+AZURE_DAILY_LIMIT=70000      # 일 7만자
+```
+
+### 안전성 보장
+Azure F0 (무료) 티어 사용 중:
+- ✅ 월 200만자 초과 시 API 429 에러 반환
+- ✅ 추가 과금 발생 불가능
+- ✅ 다음 달 1일 자동 리셋
+
+---
+
+*Last Updated: 2025-01-10*
 *Author: August Kim (augustkim.dev@gmail.com)*
