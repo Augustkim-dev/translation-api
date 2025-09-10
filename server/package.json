@@ -15,7 +15,6 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@azure-rest/ai-translation-text": "^1.0.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0"
