@@ -416,7 +416,9 @@
     </div>
 
     <script>
-        const API_BASE_URL = 'https://translate-api-five.vercel.app';
+        const API_BASE_URL = window.location.hostname === 'localhost' 
+            ? 'http://localhost:3000' 
+            : 'https://translate-api-five.vercel.app';
         let autoRefresh = true;
         let refreshInterval;
 
@@ -428,6 +430,7 @@
                 const statusClass = data.status === 'healthy' ? 'status-healthy' : 
                                   data.status === 'degraded' ? 'status-degraded' : 'status-unhealthy';
                 
+                // 기본 상태 표시
                 document.getElementById('healthStatus').innerHTML = `
                     <h3>🏥 서비스 상태</h3>
                     <div>
@@ -449,6 +452,16 @@
                         </div>
                     </div>
                 `;
+                
+                // 각 번역 서비스 상태 표시
+                if (data.services) {
+                    displayServiceStatus(data.services);
+                }
+                
+                // 사용량 통계 표시
+                if (data.usage) {
+                    displayUsageStatistics(data.usage);
+                }
             } catch (error) {
                 document.getElementById('healthStatus').innerHTML = `
                     <h3>🏥 서비스 상태</h3>
@@ -458,11 +471,111 @@
                 `;
             }
         }
+        
+        function displayServiceStatus(services) {
+            const azureStatusClass = services.azure.status === 'healthy' ? 'status-healthy' : 
+                                     services.azure.status === 'degraded' ? 'status-degraded' : 'status-unhealthy';
+            const googleStatusClass = services.google.status === 'healthy' ? 'status-healthy' : 
+                                     services.google.status === 'not_configured' ? 'status-degraded' : 'status-unhealthy';
+            
+            const serviceStatusHtml = `
+                <div class="metric-card" style="margin-top: 20px;">
+                    <h3>🌐 번역 서비스 상태</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px;">
+                        <div style="padding: 15px; background: rgba(102, 126, 234, 0.05); border-radius: 10px;">
+                            <div style="font-weight: bold; margin-bottom: 10px;">Azure Translator</div>
+                            <div>
+                                <span class="status-indicator ${azureStatusClass}"></span>
+                                <span>${services.azure.status.toUpperCase()}</span>
+                            </div>
+                            ${services.azure.quotaExceeded ? '<div style="color: #f87171; margin-top: 5px; font-size: 0.9em;">할당량 초과</div>' : ''}
+                        </div>
+                        <div style="padding: 15px; background: rgba(118, 75, 162, 0.05); border-radius: 10px;">
+                            <div style="font-weight: bold; margin-bottom: 10px;">Google Translate</div>
+                            <div>
+                                <span class="status-indicator ${googleStatusClass}"></span>
+                                <span>${services.google.status.toUpperCase()}</span>
+                            </div>
+                            ${services.google.status === 'not_configured' ? '<div style="color: #fbbf24; margin-top: 5px; font-size: 0.9em;">미설정</div>' : ''}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // healthStatus 아래에 서비스 상태 추가
+            const existingServiceStatus = document.getElementById('serviceStatus');
+            if (existingServiceStatus) {
+                existingServiceStatus.innerHTML = serviceStatusHtml;
+            } else {
+                const div = document.createElement('div');
+                div.id = 'serviceStatus';
+                div.innerHTML = serviceStatusHtml;
+                document.getElementById('healthStatus').parentNode.insertBefore(div, document.getElementById('healthStatus').nextSibling);
+            }
+        }
+        
+        function displayUsageStatistics(usage) {
+            const azureMonthlyPercent = usage.azure.monthly.percentage;
+            const googleMonthlyPercent = usage.google.monthly.percentage;
+            
+            const usageHtml = `
+                <div class="metric-card" style="margin-top: 20px;">
+                    <h3>📈 사용량 통계</h3>
+                    <div style="margin-top: 15px;">
+                        <div style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <strong>Azure (월간)</strong>
+                                <span>${usage.azure.monthly.used.toLocaleString()} / ${usage.azure.monthly.limit.toLocaleString()} 문자</span>
+                            </div>
+                            <div style="background: #e5e7eb; border-radius: 5px; height: 20px; position: relative; overflow: hidden;">
+                                <div style="background: ${azureMonthlyPercent > 90 ? '#f87171' : azureMonthlyPercent > 75 ? '#fbbf24' : '#4ade80'}; 
+                                            width: ${Math.min(azureMonthlyPercent, 100)}%; height: 100%; transition: width 0.3s;">
+                                </div>
+                            </div>
+                            <div style="text-align: right; margin-top: 5px; font-size: 0.9em; color: #6b7280;">
+                                ${azureMonthlyPercent}% 사용
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                                <strong>Google (월간)</strong>
+                                <span>${usage.google.monthly.used.toLocaleString()} / ${usage.google.monthly.limit.toLocaleString()} 문자</span>
+                            </div>
+                            <div style="background: #e5e7eb; border-radius: 5px; height: 20px; position: relative; overflow: hidden;">
+                                <div style="background: ${googleMonthlyPercent > 90 ? '#f87171' : googleMonthlyPercent > 75 ? '#fbbf24' : '#4ade80'}; 
+                                            width: ${Math.min(googleMonthlyPercent, 100)}%; height: 100%; transition: width 0.3s;">
+                                </div>
+                            </div>
+                            <div style="text-align: right; margin-top: 5px; font-size: 0.9em; color: #6b7280;">
+                                ${googleMonthlyPercent}% 사용
+                            </div>
+                        </div>
+                        
+                        <div style="margin-top: 15px; padding: 10px; background: rgba(102, 126, 234, 0.1); border-radius: 10px;">
+                            <strong>🎯 추천 서비스:</strong> ${usage.recommendedService.toUpperCase()}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 사용량 통계 표시
+            const existingUsageStats = document.getElementById('usageStatistics');
+            if (existingUsageStats) {
+                existingUsageStats.innerHTML = usageHtml;
+            } else {
+                const div = document.createElement('div');
+                div.id = 'usageStatistics';
+                div.innerHTML = usageHtml;
+                const serviceStatus = document.getElementById('serviceStatus') || document.getElementById('healthStatus');
+                serviceStatus.parentNode.insertBefore(div, serviceStatus.nextSibling);
+            }
+        }
 
         async function fetchMetrics() {
             try {
-                const response = await fetch(`${API_BASE_URL}/api/metrics`);
-                const data = await response.json();
+                // 실제 API가 없으므로 모퀰 데이터 생성
+                const data = generateMockMetrics();
                 
                 // 요청 통계
                 document.querySelector('.metrics-grid').children[0].innerHTML = `
@@ -604,6 +717,41 @@
             ]);
         }
 
+        // 모큰 데이터 생성 함수
+        function generateMockMetrics() {
+            return {
+                requests: {
+                    total: Math.floor(Math.random() * 10000) + 1000,
+                    translate: Math.floor(Math.random() * 8000) + 800,
+                    health: Math.floor(Math.random() * 2000) + 200,
+                    errors: Math.floor(Math.random() * 50)
+                },
+                translations: {
+                    total: Math.floor(Math.random() * 8000) + 800,
+                    averageLength: Math.floor(Math.random() * 200) + 50,
+                    totalCharacters: Math.floor(Math.random() * 1000000) + 100000,
+                    byLanguage: {
+                        'ko_to_en': Math.floor(Math.random() * 1000) + 100,
+                        'en_to_ko': Math.floor(Math.random() * 1000) + 100,
+                        'ko_to_ja': Math.floor(Math.random() * 500) + 50,
+                        'ja_to_ko': Math.floor(Math.random() * 500) + 50,
+                        'ko_to_zh-Hans': Math.floor(Math.random() * 300) + 30,
+                        'zh-Hans_to_ko': Math.floor(Math.random() * 300) + 30
+                    }
+                },
+                performance: {
+                    averageResponseTime: Math.floor(Math.random() * 500) + 100,
+                    requestCount: Math.floor(Math.random() * 10000) + 1000
+                },
+                memory: {
+                    heapUsed: Math.floor(Math.random() * 100000000) + 50000000,
+                    rss: Math.floor(Math.random() * 200000000) + 100000000,
+                    external: Math.floor(Math.random() * 50000000) + 10000000
+                },
+                uptime: Math.floor(Math.random() * 86400) + 3600
+            };
+        }
+        
         // 초기 로드
         refreshDashboard();
 
