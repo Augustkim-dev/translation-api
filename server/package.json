@@ -16,6 +16,7 @@
   "description": "",
   "dependencies": {
     "@azure-rest/ai-translation-text": "^1.0.1",
+    "@google-cloud/translate": "^9.2.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0"
