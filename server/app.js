@@ -38,72 +38,55 @@ app.get('/health', (req, res) => {
 
 // 상세 헬스체크 엔드포인트 (의존성 체크 포함)
 app.get('/api/health', async (req, res) => {
+  const checks = {
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    service: 'translation-api',
+    version: '1.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    checks: {
+      server: 'ok',
+      azure_config: 'unknown',
+      memory: 'unknown'
+    }
+  };
+
   try {
-    // 번역 서비스 상태 가져오기
-    const serviceHealth = await translationService.getHealthStatus();
-    
+    // Azure 설정 확인
+    if (process.env.AZURE_TRANSLATOR_KEY && process.env.AZURE_TRANSLATOR_ENDPOINT) {
+      checks.checks.azure_config = 'ok';
+    } else {
+      checks.checks.azure_config = 'missing';
+      checks.status = 'degraded';
+    }
+
     // 메모리 사용량 체크
     const memoryUsage = process.memoryUsage();
     const heapUsedMB = Math.round(memoryUsage.heapUsed / 1024 / 1024);
     const heapTotalMB = Math.round(memoryUsage.heapTotal / 1024 / 1024);
     
-    // 전체 상태 결정
-    let overallStatus = 'healthy';
-    
-    // Azure 상태 확인
-    if (serviceHealth.services.azure.status === 'unhealthy') {
-      if (serviceHealth.services.google.status === 'healthy') {
-        overallStatus = 'degraded'; // Azure 실패했지만 Google 사용 가능
-      } else {
-        overallStatus = 'unhealthy'; // 둘 다 실패
-      }
-    }
-    
-    // 메모리 체크
-    if (heapUsedMB / heapTotalMB > 0.9) {
-      overallStatus = overallStatus === 'healthy' ? 'degraded' : overallStatus;
-    }
-    
-    // 사용량 한도 체크
-    if (serviceHealth.usage) {
-      const azureStatus = serviceHealth.usage.azure.status;
-      const googleStatus = serviceHealth.usage.google.status;
-      
-      if (azureStatus === 'exhausted' && googleStatus === 'exhausted') {
-        overallStatus = 'unhealthy';
-      } else if (azureStatus === 'critical' || googleStatus === 'critical') {
-        overallStatus = overallStatus === 'healthy' ? 'degraded' : overallStatus;
-      }
-    }
-    
-    const healthResponse = {
-      status: overallStatus,
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      service: 'translation-api',
-      version: '2.0.0', // 버전 업데이트
-      environment: process.env.NODE_ENV || 'development',
-      memory: {
-        heapUsed: `${heapUsedMB} MB`,
-        heapTotal: `${heapTotalMB} MB`,
-        usage: `${Math.round((heapUsedMB / heapTotalMB) * 100)}%`
-      },
-      services: serviceHealth.services,
-      usage: serviceHealth.usage,
-      configuration: serviceHealth.configuration
+    checks.memory = {
+      heapUsed: `${heapUsedMB} MB`,
+      heapTotal: `${heapTotalMB} MB`,
+      usage: `${Math.round((heapUsedMB / heapTotalMB) * 100)}%`
     };
     
-    const statusCode = overallStatus === 'healthy' ? 200 : 
-                      overallStatus === 'degraded' ? 206 : 503;
-    
-    res.status(statusCode).json(healthResponse);
+    if (heapUsedMB / heapTotalMB > 0.9) {
+      checks.checks.memory = 'warning';
+      checks.status = 'degraded';
+    } else {
+      checks.checks.memory = 'ok';
+    }
+
+    // 전체 상태 결정
+    const statusCode = checks.status === 'healthy' ? 200 : 503;
+    res.status(statusCode).json(checks);
   } catch (error) {
     console.error('Health check error:', error);
-    res.status(503).json({
-      status: 'unhealthy',
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
+    checks.status = 'unhealthy';
+    checks.error = error.message;
+    res.status(503).json(checks);
   }
 });
 
@@ -123,38 +106,9 @@ app.post('/api/translate', async (req, res) => {
 
     // 번역 서비스 호출
     const result = await translationService.translate(text, targetLanguage, sourceLanguage);
-    
-    // 폴백 사용 시 헤더에 정보 추가
-    if (result.fallbackUsed) {
-      res.setHeader('X-Translation-Fallback', 'true');
-      res.setHeader('X-Translation-Service', result.service);
-    }
-    
     res.json(result);
   } catch (error) {
     console.error('API Error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 사용량 통계 엔드포인트
-app.get('/api/usage', async (req, res) => {
-  try {
-    const usage = await translationService.getUsageStatistics();
-    res.json(usage);
-  } catch (error) {
-    console.error('Usage statistics error:', error);
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// 지원 언어 목록 엔드포인트
-app.get('/api/languages', async (req, res) => {
-  try {
-    const languages = await translationService.getSupportedLanguages();
-    res.json(languages);
-  } catch (error) {
-    console.error('Languages error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -168,4 +122,4 @@ if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
 }
 
 // Vercel 서버리스 함수로 export
-module.exports = app; 
+module.exports = app;
